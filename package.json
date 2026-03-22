@@ -1,0 +1,65 @@
+{
+  "name": "cynco",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for the Cynco REST API",
+  "author": "Cynco Sdn Bhd",
+  "license": "MIT",
+  "homepage": "https://github.com/cynco-io/cynco-node",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cynco-io/cynco-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cynco-io/cynco-node/issues"
+  },
+  "keywords": [
+    "cynco",
+    "api",
+    "sdk",
+    "accounting",
+    "invoicing",
+    "payments",
+    "typescript"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ tests/",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "eslint": "^9.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
