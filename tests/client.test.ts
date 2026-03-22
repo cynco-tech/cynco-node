@@ -141,6 +141,15 @@ describe('CyncoClient', () => {
         reset: 1700000000,
       });
     });
+
+    it('includes success: true even when API omits it', async () => {
+      const fetch = mockFetch(200, { data: { id: '1' } });
+      const client = new CyncoClient('cak_test_key', { fetch });
+
+      const result = await client.get<{ id: string }>('/invoices/1');
+
+      expect(result.success).toBe(true);
+    });
   });
 
   describe('POST requests', () => {

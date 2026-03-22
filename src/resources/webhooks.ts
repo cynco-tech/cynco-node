@@ -1,5 +1,5 @@
 import type { CyncoClient } from '../client.js';
-import { Page } from '../pagination.js';
+import { Page, PagePromise } from '../pagination.js';
 import type {
   Webhook,
   WebhookListParams,
@@ -21,7 +21,7 @@ export class Webhooks {
    * }
    * ```
    */
-  async list(params?: WebhookListParams): Promise<Page<Webhook>> {
+  list(params?: WebhookListParams): PagePromise<Webhook> {
     const fetchPage = async (
       p: WebhookListParams,
     ): Promise<PaginatedResponse<Webhook>> => {
@@ -31,8 +31,11 @@ export class Webhooks {
       );
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 
   /** Retrieve a single webhook endpoint by ID. */

@@ -109,7 +109,7 @@ describe('Customers resource', () => {
       expect(parsed.searchParams.get('limit')).toBe('10');
     });
 
-    it('supports auto-pagination', async () => {
+    it('supports auto-pagination via await + for-await-of on Page', async () => {
       const fetch = createMockFetch();
       fetch
         .mockResolvedValueOnce(
@@ -148,6 +148,56 @@ describe('Customers resource', () => {
       expect(ids).toEqual(['cust_1', 'cust_2', 'cust_3']);
       // 1 initial + 2 nextPage calls
       expect(fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('supports for-await-of directly on list() without intermediate await', async () => {
+      const fetch = createMockFetch();
+      fetch
+        .mockResolvedValueOnce(
+          mockListResponse(
+            [{ ...mockCustomer, id: 'cust_1' }],
+            3,
+            0,
+            1,
+          ),
+        )
+        .mockResolvedValueOnce(
+          mockListResponse(
+            [{ ...mockCustomer, id: 'cust_2' }],
+            3,
+            1,
+            1,
+          ),
+        )
+        .mockResolvedValueOnce(
+          mockListResponse(
+            [{ ...mockCustomer, id: 'cust_3' }],
+            3,
+            2,
+            1,
+          ),
+        );
+
+      const cynco = makeCynco(fetch);
+
+      const ids: string[] = [];
+      // This is the key pattern — no intermediate `await`
+      for await (const customer of cynco.customers.list({ limit: 1 })) {
+        ids.push(customer.id);
+      }
+
+      expect(ids).toEqual(['cust_1', 'cust_2', 'cust_3']);
+      expect(fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('includes success: true on the Page result', async () => {
+      const fetch = createMockFetch();
+      fetch.mockResolvedValue(mockListResponse([mockCustomer], 1));
+      const cynco = makeCynco(fetch);
+
+      const page = await cynco.customers.list();
+
+      expect(page.success).toBe(true);
     });
   });
 

@@ -1,5 +1,5 @@
 import type { CyncoClient } from '../client.js';
-import { Page } from '../pagination.js';
+import { Page, PagePromise } from '../pagination.js';
 import type {
   Vendor,
   VendorListParams,
@@ -21,7 +21,7 @@ export class Vendors {
    * }
    * ```
    */
-  async list(params?: VendorListParams): Promise<Page<Vendor>> {
+  list(params?: VendorListParams): PagePromise<Vendor> {
     const fetchPage = async (
       p: VendorListParams,
     ): Promise<PaginatedResponse<Vendor>> => {
@@ -31,8 +31,11 @@ export class Vendors {
       );
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 
   /** Retrieve a single vendor by ID. */

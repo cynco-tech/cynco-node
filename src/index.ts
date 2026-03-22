@@ -103,7 +103,7 @@ export {
 } from './errors.js';
 
 // Pagination
-export { Page, CursorPage } from './pagination.js';
+export { Page, CursorPage, PagePromise, CursorPagePromise } from './pagination.js';
 
 // Webhooks
 export { webhookVerifier } from './webhooks.js';

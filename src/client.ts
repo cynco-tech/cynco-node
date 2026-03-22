@@ -195,19 +195,21 @@ export class CyncoClient {
           return { success: true, data: undefined } as T;
         }
 
-        const json = (await response.json()) as T;
+        const json = (await response.json()) as Record<string, unknown>;
+
+        // Ensure success field is always present on success responses
+        json['success'] = true;
 
         // Attach rate limit info to meta if present
-        if (rateLimitInfo && typeof json === 'object' && json !== null) {
-          const withMeta = json as Record<string, unknown>;
-          withMeta['meta'] = {
-            ...(withMeta['meta'] as Record<string, unknown> | undefined),
+        if (rateLimitInfo) {
+          json['meta'] = {
+            ...(json['meta'] as Record<string, unknown> | undefined),
             requestId,
             rateLimit: rateLimitInfo,
           };
         }
 
-        return json;
+        return json as T;
       }
 
       // Error response — check if retryable

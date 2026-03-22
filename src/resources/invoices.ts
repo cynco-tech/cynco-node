@@ -1,5 +1,5 @@
 import type { CyncoClient } from '../client.js';
-import { Page } from '../pagination.js';
+import { Page, PagePromise } from '../pagination.js';
 import type {
   Invoice,
   InvoiceListParams,
@@ -15,22 +15,31 @@ export class Invoices {
   /**
    * List invoices with pagination.
    *
-   * Returns a `Page` that can be used as an async iterator for auto-pagination:
+   * Returns a `PagePromise` that can be awaited for a single page or used
+   * directly as an async iterator for auto-pagination:
    * ```ts
+   * // Single page
+   * const page = await cynco.invoices.list({ limit: 20 });
+   * console.log(page.data);
+   *
+   * // Auto-pagination
    * for await (const invoice of cynco.invoices.list({ limit: 50 })) {
    *   console.log(invoice.id);
    * }
    * ```
    */
-  async list(params?: InvoiceListParams): Promise<Page<Invoice>> {
+  list(params?: InvoiceListParams): PagePromise<Invoice> {
     const fetchPage = async (
       p: InvoiceListParams,
     ): Promise<PaginatedResponse<Invoice>> => {
       return this._client.getList<Invoice>('/invoices', p as Record<string, unknown>);
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 
   /** Retrieve a single invoice by ID. */

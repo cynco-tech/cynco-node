@@ -22,6 +22,7 @@ import type {
  * ```
  */
 export class Page<T> implements AsyncIterable<T> {
+  readonly success: true = true;
   readonly data: T[];
   readonly pagination: PaginatedResponse<T>['pagination'];
   readonly links?: PaginatedResponse<T>['links'];
@@ -84,6 +85,7 @@ export class Page<T> implements AsyncIterable<T> {
  * A cursor-based paginated list with async iteration support.
  */
 export class CursorPage<T> implements AsyncIterable<T> {
+  readonly success: true = true;
   readonly data: T[];
   readonly pagination: CursorPaginatedResponse<T>['pagination'];
   readonly links?: CursorPaginatedResponse<T>['links'];
@@ -135,5 +137,109 @@ export class CursorPage<T> implements AsyncIterable<T> {
       }
       page = await page.nextPage();
     }
+  }
+}
+
+/**
+ * A promise that resolves to a `Page<T>` but also implements `AsyncIterable<T>`,
+ * so it can be used directly in `for await...of` without an intermediate `await`:
+ *
+ * ```ts
+ * // Both work:
+ * const page = await cynco.invoices.list();   // Page<Invoice>
+ * for await (const inv of cynco.invoices.list()) { ... }
+ * ```
+ */
+export class PagePromise<T>
+  implements PromiseLike<Page<T>>, AsyncIterable<T>
+{
+  private readonly _promise: Promise<Page<T>>;
+
+  constructor(promise: Promise<Page<T>>) {
+    this._promise = promise;
+  }
+
+  /** Satisfy PromiseLike so `await` works. */
+  then<TResult1 = Page<T>, TResult2 = never>(
+    onfulfilled?:
+      | ((value: Page<T>) => TResult1 | PromiseLike<TResult1>)
+      | null
+      | undefined,
+    onrejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null
+      | undefined,
+  ): Promise<TResult1 | TResult2> {
+    return this._promise.then(onfulfilled, onrejected);
+  }
+
+  /** Satisfy Promise-like `catch`. */
+  catch<TResult = never>(
+    onrejected?:
+      | ((reason: unknown) => TResult | PromiseLike<TResult>)
+      | null
+      | undefined,
+  ): Promise<Page<T> | TResult> {
+    return this._promise.catch(onrejected);
+  }
+
+  /** Satisfy Promise-like `finally`. */
+  finally(onfinally?: (() => void) | null | undefined): Promise<Page<T>> {
+    return this._promise.finally(onfinally);
+  }
+
+  /**
+   * Iterate over all items across all pages.
+   * Fetches the first page lazily, then auto-paginates.
+   */
+  async *[Symbol.asyncIterator](): AsyncIterator<T> {
+    const page = await this._promise;
+    yield* page;
+  }
+}
+
+/**
+ * A promise that resolves to a `CursorPage<T>` but also implements `AsyncIterable<T>`.
+ */
+export class CursorPagePromise<T>
+  implements PromiseLike<CursorPage<T>>, AsyncIterable<T>
+{
+  private readonly _promise: Promise<CursorPage<T>>;
+
+  constructor(promise: Promise<CursorPage<T>>) {
+    this._promise = promise;
+  }
+
+  then<TResult1 = CursorPage<T>, TResult2 = never>(
+    onfulfilled?:
+      | ((value: CursorPage<T>) => TResult1 | PromiseLike<TResult1>)
+      | null
+      | undefined,
+    onrejected?:
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+      | null
+      | undefined,
+  ): Promise<TResult1 | TResult2> {
+    return this._promise.then(onfulfilled, onrejected);
+  }
+
+  catch<TResult = never>(
+    onrejected?:
+      | ((reason: unknown) => TResult | PromiseLike<TResult>)
+      | null
+      | undefined,
+  ): Promise<CursorPage<T> | TResult> {
+    return this._promise.catch(onrejected);
+  }
+
+  finally(
+    onfinally?: (() => void) | null | undefined,
+  ): Promise<CursorPage<T>> {
+    return this._promise.finally(onfinally);
+  }
+
+  async *[Symbol.asyncIterator](): AsyncIterator<T> {
+    const page = await this._promise;
+    yield* page;
   }
 }

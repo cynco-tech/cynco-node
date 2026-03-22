@@ -1,5 +1,5 @@
 import type { CyncoClient } from '../client.js';
-import { Page } from '../pagination.js';
+import { Page, PagePromise } from '../pagination.js';
 import type {
   BankAccount,
   BankAccountListParams,
@@ -23,7 +23,7 @@ export class BankAccounts {
    * }
    * ```
    */
-  async list(params?: BankAccountListParams): Promise<Page<BankAccount>> {
+  list(params?: BankAccountListParams): PagePromise<BankAccount> {
     const fetchPage = async (
       p: BankAccountListParams,
     ): Promise<PaginatedResponse<BankAccount>> => {
@@ -33,8 +33,11 @@ export class BankAccounts {
       );
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 
   /** Retrieve a single bank account by ID. */
@@ -86,10 +89,10 @@ export class BankAccounts {
    * }
    * ```
    */
-  async listTransactions(
+  listTransactions(
     bankAccountId: string,
     params?: BankTransactionListParams,
-  ): Promise<Page<BankTransaction>> {
+  ): PagePromise<BankTransaction> {
     const fetchPage = async (
       p: BankTransactionListParams,
     ): Promise<PaginatedResponse<BankTransaction>> => {
@@ -99,7 +102,10 @@ export class BankAccounts {
       );
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 }

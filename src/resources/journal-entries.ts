@@ -1,5 +1,5 @@
 import type { CyncoClient } from '../client.js';
-import { Page } from '../pagination.js';
+import { Page, PagePromise } from '../pagination.js';
 import type {
   JournalEntry,
   JournalEntryListParams,
@@ -21,7 +21,7 @@ export class JournalEntries {
    * }
    * ```
    */
-  async list(params?: JournalEntryListParams): Promise<Page<JournalEntry>> {
+  list(params?: JournalEntryListParams): PagePromise<JournalEntry> {
     const fetchPage = async (
       p: JournalEntryListParams,
     ): Promise<PaginatedResponse<JournalEntry>> => {
@@ -31,8 +31,11 @@ export class JournalEntries {
       );
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 
   /** Retrieve a single journal entry by ID. */

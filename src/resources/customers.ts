@@ -1,5 +1,5 @@
 import type { CyncoClient } from '../client.js';
-import { Page } from '../pagination.js';
+import { Page, PagePromise } from '../pagination.js';
 import type {
   Customer,
   CustomerListParams,
@@ -21,7 +21,7 @@ export class Customers {
    * }
    * ```
    */
-  async list(params?: CustomerListParams): Promise<Page<Customer>> {
+  list(params?: CustomerListParams): PagePromise<Customer> {
     const fetchPage = async (
       p: CustomerListParams,
     ): Promise<PaginatedResponse<Customer>> => {
@@ -31,8 +31,11 @@ export class Customers {
       );
     };
 
-    const response = await fetchPage(params ?? {});
-    return new Page(response, fetchPage, params ?? {});
+    return new PagePromise(
+      fetchPage(params ?? {}).then(
+        (response) => new Page(response, fetchPage, params ?? {}),
+      ),
+    );
   }
 
   /** Retrieve a single customer by ID. */
