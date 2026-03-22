@@ -1,4 +1,4 @@
-# cynco
+# @cynco/sdk
 
 The official TypeScript SDK for the [Cynco](https://cynco.io) REST API.
 
@@ -7,15 +7,15 @@ Cynco is an AI-native business platform for accounting, invoicing, payments, and
 ## Installation
 
 ```bash
-npm install cynco
+npm install @cynco/sdk
 ```
 
 ```bash
-pnpm add cynco
+pnpm add @cynco/sdk
 ```
 
 ```bash
-yarn add cynco
+yarn add @cynco/sdk
 ```
 
 **Requirements:** Node.js 18 or later.
@@ -23,7 +23,7 @@ yarn add cynco
 ## Quick Start
 
 ```typescript
-import Cynco from 'cynco';
+import Cynco from '@cynco/sdk';
 
 const cynco = new Cynco('cak_your_api_key');
 
@@ -270,7 +270,7 @@ import Cynco, {
   ValidationError,
   NotFoundError,
   RateLimitError,
-} from 'cynco';
+} from '@cynco/sdk';
 
 try {
   await cynco.customers.create({ name: '' });
@@ -324,7 +324,7 @@ If a request with the same idempotency key was already processed, the API return
 Verify incoming webhook signatures using the static `Cynco.webhooks` utility. No client instantiation needed.
 
 ```typescript
-import Cynco from 'cynco';
+import Cynco from '@cynco/sdk';
 
 // In your webhook handler (e.g. Express)
 app.post('/webhooks/cynco', (req, res) => {
@@ -393,7 +393,7 @@ import type {
   CustomerListParams,
   PaginatedResponse,
   WebhookEvent,
-} from 'cynco';
+} from '@cynco/sdk';
 ```
 
 ## CommonJS
