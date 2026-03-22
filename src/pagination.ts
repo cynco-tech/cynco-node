@@ -57,10 +57,12 @@ export class Page<T> implements AsyncIterable<T> {
       return null;
     }
 
-    const nextOffset = this.pagination.offset + this.pagination.limit;
+    // The API uses page-based params but returns offset in the pagination response.
+    // Compute the next page number from the current offset + limit.
+    const nextPage = Math.floor(this.pagination.offset / this.pagination.limit) + 2;
     const nextParams: ListParams = {
       ...this._params,
-      offset: nextOffset,
+      page: nextPage,
     };
 
     const response = await this._fetchPage(nextParams);

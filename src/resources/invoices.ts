@@ -3,7 +3,6 @@ import { Page, PagePromise } from '../pagination.js';
 import type {
   Invoice,
   InvoiceListParams,
-  InvoiceCreateInput,
   InvoiceUpdateInput,
   PaginatedResponse,
   RequestOptions,
@@ -48,20 +47,7 @@ export class Invoices {
     return response.data;
   }
 
-  /** Create a new invoice. */
-  async create(
-    data: InvoiceCreateInput,
-    options?: RequestOptions,
-  ): Promise<Invoice> {
-    const response = await this._client.post<Invoice>(
-      '/invoices',
-      data,
-      options,
-    );
-    return response.data;
-  }
-
-  /** Update an existing invoice. */
+  /** Update an existing invoice (memo, paymentTerms, dueDate only). */
   async update(
     id: string,
     data: InvoiceUpdateInput,

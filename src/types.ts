@@ -101,54 +101,79 @@ export interface ValidationDetail {
 // ---------------------------------------------------------------------------
 
 export interface ListParams {
+  page?: number;
   limit?: number;
-  offset?: number;
   cursor?: string;
   sort?: string;
   order?: 'asc' | 'desc';
+  fields?: string;
 }
 
+/**
+ * Query params for GET /api/v1/invoices.
+ * Matches the Zod `listQuerySchema` in api.v1.invoices.tsx.
+ * Sort accepts: 'created_at' | 'due_date' | 'total'.
+ */
 export interface InvoiceListParams extends ListParams {
   status?: InvoiceStatus;
-  customerId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  dueDateFrom?: string;
-  dueDateTo?: string;
+  created_from?: string;
+  created_to?: string;
+  due_from?: string;
+  due_to?: string;
+  min_amount?: number;
+  max_amount?: number;
   search?: string;
 }
 
+/**
+ * Query params for GET /api/v1/customers.
+ * Matches the Zod `listQuerySchema` in api.v1.customers.tsx.
+ * Sort accepts: 'name' | 'email' | 'created_at'.
+ */
 export interface CustomerListParams extends ListParams {
+  status?: 'active' | 'inactive' | 'all';
   search?: string;
-  type?: 'individual' | 'company';
-  isActive?: boolean;
 }
 
+/**
+ * Query params for GET /api/v1/vendors.
+ * Matches the Zod `listQuerySchema` in api.v1.vendors.tsx.
+ * Sort accepts: 'name' | 'created_at' | 'total_amount'.
+ */
 export interface VendorListParams extends ListParams {
+  status?: 'active' | 'inactive' | 'all';
+  category?: string;
   search?: string;
-  isActive?: boolean;
 }
 
+/**
+ * Query params for GET /api/v1/bills.
+ * Matches the Zod `listQuerySchema` in api.v1.bills.tsx.
+ * Sort accepts: 'created_at' | 'due_date' | 'total_amount' | 'bill_number'.
+ */
 export interface BillListParams extends ListParams {
-  status?: BillStatus;
-  vendorId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  dueDateFrom?: string;
-  dueDateTo?: string;
+  status?: BillStatus | 'all';
   search?: string;
+  vendorId?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
+/**
+ * Query params for GET /api/v1/items.
+ * Matches the Zod `listQuerySchema` in api.v1.items.tsx.
+ */
 export interface ItemListParams extends ListParams {
   search?: string;
-  type?: 'product' | 'service';
-  isActive?: boolean;
 }
 
+/**
+ * Query params for GET /api/v1/accounts.
+ * Matches the Zod `listQuerySchema` in api.v1.accounts.tsx.
+ */
 export interface AccountListParams extends ListParams {
-  search?: string;
-  type?: AccountType;
-  isActive?: boolean;
+  account_type?: AccountType;
+  active_only?: 'true' | 'false';
 }
 
 export interface JournalEntryListParams extends ListParams {
@@ -180,159 +205,163 @@ export interface WebhookListParams extends ListParams {
 // Create / update inputs
 // ---------------------------------------------------------------------------
 
-export interface InvoiceCreateInput {
-  customerId: string;
-  issueDate: string;
-  dueDate: string;
-  lineItems: InvoiceLineItemInput[];
-  currency?: string;
-  notes?: string;
-  reference?: string;
-  taxInclusive?: boolean;
-}
-
+/**
+ * Invoice update input.
+ * Matches the Zod `updateInvoiceSchema` in invoice.schemas.ts.
+ * Note: Invoice create is not yet exposed via API (Phase 2).
+ */
 export interface InvoiceUpdateInput {
-  customerId?: string;
-  issueDate?: string;
-  dueDate?: string;
-  lineItems?: InvoiceLineItemInput[];
-  currency?: string;
-  notes?: string;
-  reference?: string;
-  taxInclusive?: boolean;
+  memo?: string | null;
+  paymentTerms?: string | null;
+  dueDate?: string | null;
 }
 
-export interface InvoiceLineItemInput {
-  itemId?: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  taxRate?: number;
-  accountId?: string;
-}
-
+/**
+ * Customer create input.
+ * Matches the Zod `createCustomerSchema` in customer.schemas.ts.
+ */
 export interface CustomerCreateInput {
   name: string;
   email?: string;
   phone?: string;
-  type?: 'individual' | 'company';
-  taxNumber?: string;
-  currency?: string;
-  billingAddress?: Address;
-  shippingAddress?: Address;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  website?: string;
+  paymentTerms?: string;
+  preferredPaymentMethod?: string;
+  preferredCurrency?: string;
+  creditLimit?: string;
+  category?: string;
   notes?: string;
 }
 
+/**
+ * Customer update input.
+ * Matches the Zod `updateCustomerSchema` in customer.schemas.ts.
+ * All create fields are optional, plus `isActive`.
+ */
 export interface CustomerUpdateInput {
   name?: string;
   email?: string;
   phone?: string;
-  type?: 'individual' | 'company';
-  taxNumber?: string;
-  currency?: string;
-  billingAddress?: Address;
-  shippingAddress?: Address;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  website?: string;
+  paymentTerms?: string;
+  preferredPaymentMethod?: string;
+  preferredCurrency?: string;
+  creditLimit?: string;
+  category?: string;
   notes?: string;
+  isActive?: boolean;
 }
 
+/**
+ * Vendor create input.
+ * Matches the Zod `createVendorSchema` in vendor.schemas.ts.
+ */
 export interface VendorCreateInput {
   name: string;
   email?: string;
   phone?: string;
-  taxNumber?: string;
-  currency?: string;
-  address?: Address;
-  bankDetails?: BankDetails;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  website?: string;
+  paymentTerms?: string;
+  preferredPaymentMethod?: string;
+  bankAccountNumber?: string;
+  bankName?: string;
+  bankBranch?: string;
+  category?: string;
   notes?: string;
+  defaultExpenseAccountId?: string;
+  defaultPayableAccountId?: string;
 }
 
+/**
+ * Vendor update input.
+ * Matches the Zod `updateVendorSchema` in vendor.schemas.ts.
+ * All create fields are optional, plus `isActive`.
+ */
 export interface VendorUpdateInput {
   name?: string;
   email?: string;
   phone?: string;
-  taxNumber?: string;
-  currency?: string;
-  address?: Address;
-  bankDetails?: BankDetails;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  website?: string;
+  paymentTerms?: string;
+  preferredPaymentMethod?: string;
+  bankAccountNumber?: string;
+  bankName?: string;
+  bankBranch?: string;
+  category?: string;
   notes?: string;
+  defaultExpenseAccountId?: string;
+  defaultPayableAccountId?: string;
+  isActive?: boolean;
 }
 
-export interface BillCreateInput {
-  vendorId: string;
-  issueDate: string;
-  dueDate: string;
-  lineItems: BillLineItemInput[];
-  currency?: string;
-  notes?: string;
-  reference?: string;
-  taxInclusive?: boolean;
-}
-
+/**
+ * Bill update input.
+ * Matches the Zod `updateBillSchema` in bill.schemas.ts.
+ * Note: Bill create is not yet exposed via API.
+ */
 export interface BillUpdateInput {
   vendorId?: string;
-  issueDate?: string;
-  dueDate?: string;
-  lineItems?: BillLineItemInput[];
+  billNumber?: string;
+  referenceNumber?: string;
+  status?: BillStatus;
   currency?: string;
+  dueDate?: string;
+  issueDate?: string;
+  category?: string;
+  memo?: string;
   notes?: string;
-  reference?: string;
-  taxInclusive?: boolean;
 }
 
-export interface BillLineItemInput {
-  itemId?: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  taxRate?: number;
-  accountId?: string;
-}
-
+/**
+ * Item create input.
+ * Matches the Zod `createItemSchema` in item.schemas.ts.
+ */
 export interface ItemCreateInput {
   name: string;
-  type: 'product' | 'service';
   description?: string;
-  unitPrice?: number;
-  cost?: number;
+  unitPrice: number;
   taxRate?: number;
-  sku?: string;
-  unit?: string;
-  incomeAccountId?: string;
-  expenseAccountId?: string;
+  discountRate?: number;
 }
 
+/**
+ * Item update input.
+ * Matches the Zod `updateItemSchema` in item.schemas.ts.
+ */
 export interface ItemUpdateInput {
   name?: string;
-  type?: 'product' | 'service';
   description?: string;
   unitPrice?: number;
-  cost?: number;
   taxRate?: number;
-  sku?: string;
-  unit?: string;
-  incomeAccountId?: string;
-  expenseAccountId?: string;
-}
-
-export interface AccountCreateInput {
-  name: string;
-  code: string;
-  type: AccountType;
-  subType?: string;
-  description?: string;
-  currency?: string;
-  taxRate?: number;
-  isActive?: boolean;
-}
-
-export interface AccountUpdateInput {
-  name?: string;
-  code?: string;
-  subType?: string;
-  description?: string;
-  currency?: string;
-  taxRate?: number;
-  isActive?: boolean;
+  discountRate?: number;
 }
 
 export interface JournalEntryCreateInput {
@@ -391,159 +420,192 @@ export interface WebhookUpdateInput {
 }
 
 // ---------------------------------------------------------------------------
-// Resource types
+// Resource types — must EXACTLY match serializer output
 // ---------------------------------------------------------------------------
 
+/**
+ * Invoice as returned by the API.
+ * Matches `serializeInvoice()` in invoice.serializer.ts.
+ */
 export interface Invoice {
   id: string;
   invoiceNumber: string;
-  customerId: string;
-  customer?: Customer;
-  status: InvoiceStatus;
-  issueDate: string;
-  dueDate: string;
-  lineItems: InvoiceLineItem[];
-  subtotal: number;
-  taxTotal: number;
-  total: number;
-  amountDue: number;
+  status: string;
+  customerId: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
   currency: string;
-  notes: string | null;
-  reference: string | null;
-  taxInclusive: boolean;
-  pdfUrl: string | null;
+  lineItems: unknown[];
+  taxes: number;
+  totalAmount: number | null;
+  paidAmount: number;
+  hasDeposit: boolean;
+  depositAmount: number;
+  dueDate: string | null;
+  paymentTerms: string | null;
+  memo: string | null;
+  source: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface InvoiceLineItem {
-  id: string;
-  itemId: string | null;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  taxRate: number;
-  amount: number;
-  accountId: string | null;
-}
-
 export type InvoiceStatus =
   | 'draft'
-  | 'sent'
-  | 'viewed'
-  | 'partially_paid'
+  | 'finalized'
   | 'paid'
   | 'overdue'
-  | 'voided';
+  | 'partially_paid'
+  | 'deposit_paid'
+  | 'deposit_due';
 
+/**
+ * Customer as returned by the API.
+ * Matches `serializeCustomer()` in customer.serializer.ts.
+ */
 export interface Customer {
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
-  type: 'individual' | 'company';
-  taxNumber: string | null;
-  currency: string;
-  billingAddress: Address | null;
-  shippingAddress: Address | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string | null;
+  registrationNumber: string | null;
+  taxId: string | null;
+  website: string | null;
+  paymentTerms: string | null;
+  preferredPaymentMethod: string | null;
+  preferredCurrency: string | null;
+  creditLimit: number | null;
+  category: string | null;
   notes: string | null;
   isActive: boolean;
-  outstandingBalance: number;
   createdAt: string;
   updatedAt: string;
 }
 
+/**
+ * Vendor as returned by the API.
+ * Matches `serializeVendor()` in vendor.serializer.ts.
+ */
 export interface Vendor {
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
-  taxNumber: string | null;
-  currency: string;
-  address: Address | null;
-  bankDetails: BankDetails | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string | null;
+  registrationNumber: string | null;
+  taxId: string | null;
+  website: string | null;
+  paymentTerms: string | null;
+  preferredPaymentMethod: string | null;
+  preferredCurrency: string | null;
+  creditLimit: number | null;
+  category: string | null;
   notes: string | null;
   isActive: boolean;
-  outstandingBalance: number;
+  totalAmount: number;
+  totalPayments: number;
   createdAt: string;
   updatedAt: string;
 }
 
+/**
+ * Bill as returned by the API.
+ * Matches `serializeBill()` in bill.serializer.ts.
+ */
 export interface Bill {
   id: string;
-  billNumber: string;
-  vendorId: string;
-  vendor?: Vendor;
-  status: BillStatus;
-  issueDate: string;
-  dueDate: string;
-  lineItems: BillLineItem[];
-  subtotal: number;
-  taxTotal: number;
-  total: number;
-  amountDue: number;
+  billNumber: string | null;
+  referenceNumber: string | null;
+  vendorId: string | null;
+  vendorName: string | null;
+  status: string;
   currency: string;
+  subtotalAmount: number | null;
+  taxAmount: number | null;
+  totalAmount: number | null;
+  issueDate: string | null;
+  dueDate: string | null;
+  category: string | null;
+  memo: string | null;
   notes: string | null;
-  reference: string | null;
-  taxInclusive: boolean;
+  source: string | null;
+  lineItems: unknown[] | null;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface BillLineItem {
-  id: string;
-  itemId: string | null;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  taxRate: number;
-  amount: number;
-  accountId: string | null;
 }
 
 export type BillStatus =
   | 'draft'
-  | 'received'
-  | 'partially_paid'
+  | 'in_review'
+  | 'pending_approval'
+  | 'approved'
+  | 'awaiting_payment'
+  | 'scheduled'
   | 'paid'
-  | 'overdue'
-  | 'voided';
+  | 'rejected'
+  | 'void';
 
+/**
+ * Item as returned by the API.
+ * Matches `serializeItem()` in item.serializer.ts.
+ */
 export interface Item {
   id: string;
   name: string;
-  type: 'product' | 'service';
   description: string | null;
-  unitPrice: number | null;
-  cost: number | null;
-  taxRate: number | null;
-  sku: string | null;
-  unit: string | null;
-  incomeAccountId: string | null;
-  expenseAccountId: string | null;
-  isActive: boolean;
+  unitPrice: number;
+  taxRate: number;
+  discountRate: number;
   createdAt: string;
   updatedAt: string;
 }
 
+/**
+ * Account type values accepted by the accounts API.
+ * Matches the `account_type` enum in the accounts route listQuerySchema.
+ */
 export type AccountType =
   | 'asset'
   | 'liability'
   | 'equity'
   | 'revenue'
-  | 'expense';
+  | 'expense'
+  | 'contra_asset'
+  | 'contra_liability'
+  | 'contra_equity'
+  | 'contra_revenue'
+  | 'contra_expense';
 
+/**
+ * Account as returned by the API.
+ * Matches `serializeAccount()` in api.v1.accounts.tsx.
+ */
 export interface Account {
   id: string;
-  name: string;
-  code: string;
-  type: AccountType;
-  subType: string | null;
-  description: string | null;
-  currency: string;
-  taxRate: number | null;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  normalBalance: string | null;
+  parentAccountId: string | null;
+  path: string | null;
+  level: number;
   isActive: boolean;
-  balance: number;
+  isSystemAccount: boolean;
+  isHeaderAccount: boolean;
+  isCashAccount: boolean;
+  isBankAccount: boolean;
+  taxRelated: boolean;
+  defaultTaxRate: number | null;
+  taxCode: string | null;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -709,24 +771,4 @@ export interface ReportRow {
   accountName: string;
   amount: number;
   previousAmount?: number;
-}
-
-// ---------------------------------------------------------------------------
-// Shared types
-// ---------------------------------------------------------------------------
-
-export interface Address {
-  line1: string;
-  line2?: string;
-  city: string;
-  state?: string;
-  postalCode: string;
-  country: string;
-}
-
-export interface BankDetails {
-  bankName: string;
-  accountNumber: string;
-  routingNumber?: string;
-  swiftCode?: string;
 }

@@ -7,19 +7,21 @@ const mockCustomer: Customer = {
   name: 'Acme Corp',
   email: 'billing@acme.com',
   phone: '+60123456789',
-  type: 'company',
-  taxNumber: 'MY12345678',
-  currency: 'MYR',
-  billingAddress: {
-    line1: '123 Main Street',
-    city: 'Kuala Lumpur',
-    postalCode: '50000',
-    country: 'MY',
-  },
-  shippingAddress: null,
+  address: '123 Main Street',
+  city: 'Kuala Lumpur',
+  state: null,
+  zip: '50000',
+  country: 'MY',
+  registrationNumber: null,
+  taxId: 'MY12345678',
+  website: null,
+  paymentTerms: null,
+  preferredPaymentMethod: null,
+  preferredCurrency: 'MYR',
+  creditLimit: null,
+  category: null,
   notes: null,
   isActive: true,
-  outstandingBalance: 5000,
   createdAt: '2026-01-15T10:00:00Z',
   updatedAt: '2026-01-15T10:00:00Z',
 };
@@ -100,12 +102,12 @@ describe('Customers resource', () => {
       fetch.mockResolvedValue(mockListResponse([mockCustomer], 1));
       const cynco = makeCynco(fetch);
 
-      await cynco.customers.list({ search: 'Acme', type: 'company', limit: 10 });
+      await cynco.customers.list({ search: 'Acme', status: 'active', limit: 10 });
 
       const [url] = fetch.mock.calls[0]!;
       const parsed = new URL(url);
       expect(parsed.searchParams.get('search')).toBe('Acme');
-      expect(parsed.searchParams.get('type')).toBe('company');
+      expect(parsed.searchParams.get('status')).toBe('active');
       expect(parsed.searchParams.get('limit')).toBe('10');
     });
 
@@ -226,7 +228,6 @@ describe('Customers resource', () => {
       const customer = await cynco.customers.create({
         name: 'Acme Corp',
         email: 'billing@acme.com',
-        type: 'company',
       });
 
       expect(fetch).toHaveBeenCalledTimes(1);

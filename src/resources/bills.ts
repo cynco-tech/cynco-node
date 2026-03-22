@@ -3,7 +3,6 @@ import { Page, PagePromise } from '../pagination.js';
 import type {
   Bill,
   BillListParams,
-  BillCreateInput,
   BillUpdateInput,
   PaginatedResponse,
   RequestOptions,
@@ -41,15 +40,6 @@ export class Bills {
   /** Retrieve a single bill by ID. */
   async retrieve(id: string): Promise<Bill> {
     const response = await this._client.get<Bill>(`/bills/${id}`);
-    return response.data;
-  }
-
-  /** Create a new bill. */
-  async create(
-    data: BillCreateInput,
-    options?: RequestOptions,
-  ): Promise<Bill> {
-    const response = await this._client.post<Bill>('/bills', data, options);
     return response.data;
   }
 

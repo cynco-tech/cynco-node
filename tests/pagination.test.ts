@@ -9,6 +9,7 @@ describe('Page', () => {
     total: number,
     limit: number,
     fetchPage: (params: Record<string, unknown>) => Promise<PaginatedResponse<number>>,
+    page?: number,
   ): Page<number> {
     const response: PaginatedResponse<number> = {
       success: true,
@@ -20,7 +21,7 @@ describe('Page', () => {
         hasMore: offset + data.length < total,
       },
     };
-    return new Page(response, fetchPage, { limit, offset });
+    return new Page(response, fetchPage, { limit, page: page ?? 1 });
   }
 
   it('exposes data and pagination', () => {
@@ -44,7 +45,7 @@ describe('Page', () => {
     expect(fetchPage).not.toHaveBeenCalled();
   });
 
-  it('fetches next page with correct offset', async () => {
+  it('fetches next page with correct page number', async () => {
     const fetchPage = vi.fn().mockResolvedValue({
       success: true,
       data: [4, 5, 6],
@@ -54,24 +55,22 @@ describe('Page', () => {
     const page = makePage([1, 2, 3], 0, 10, 3, fetchPage);
     const next = await page.nextPage();
 
-    expect(fetchPage).toHaveBeenCalledWith({ limit: 3, offset: 3 });
+    expect(fetchPage).toHaveBeenCalledWith({ limit: 3, page: 2 });
     expect(next).not.toBeNull();
     expect(next!.data).toEqual([4, 5, 6]);
   });
 
   it('supports async iteration across all pages', async () => {
-    let callCount = 0;
     const fetchPage = vi.fn().mockImplementation((params: Record<string, unknown>) => {
-      callCount++;
-      const offset = (params.offset as number) ?? 0;
+      const page = (params.page as number) ?? 1;
 
-      if (offset === 0) {
+      if (page === 1) {
         return Promise.resolve({
           success: true,
           data: [1, 2, 3],
           pagination: { total: 9, limit: 3, offset: 0, hasMore: true },
         });
-      } else if (offset === 3) {
+      } else if (page === 2) {
         return Promise.resolve({
           success: true,
           data: [4, 5, 6],
@@ -87,8 +86,8 @@ describe('Page', () => {
     });
 
     // Create first page manually
-    const firstResponse = await fetchPage({ limit: 3, offset: 0 });
-    const page = new Page(firstResponse, fetchPage, { limit: 3, offset: 0 });
+    const firstResponse = await fetchPage({ limit: 3, page: 1 });
+    const page = new Page(firstResponse, fetchPage, { limit: 3, page: 1 });
 
     const allItems: number[] = [];
     for await (const item of page) {
@@ -211,9 +210,9 @@ describe('PagePromise', () => {
     });
 
     return new PagePromise(
-      fetchPage({ limit, offset: 0 }).then(
+      fetchPage({ limit, page: 1 }).then(
         (response: PaginatedResponse<number>) =>
-          new Page(response, fetchPage, { limit, offset: 0 }),
+          new Page(response, fetchPage, { limit, page: 1 }),
       ),
     );
   }
