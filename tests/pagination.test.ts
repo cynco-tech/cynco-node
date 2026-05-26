@@ -11,12 +11,15 @@ describe('Page', () => {
     fetchPage: (params: Record<string, unknown>) => Promise<PaginatedResponse<number>>,
     page?: number,
   ): Page<number> {
+    const currentPage = page ?? Math.floor(offset / limit) + 1;
     const response: PaginatedResponse<number> = {
       success: true,
       data,
       pagination: {
+        page: currentPage,
         total,
         limit,
+        totalPages: Math.ceil(total / limit),
         offset,
         hasMore: offset + data.length < total,
       },
@@ -49,7 +52,14 @@ describe('Page', () => {
     const fetchPage = vi.fn().mockResolvedValue({
       success: true,
       data: [4, 5, 6],
-      pagination: { total: 10, limit: 3, offset: 3, hasMore: true },
+      pagination: {
+        page: 2,
+        total: 10,
+        limit: 3,
+        totalPages: 4,
+        offset: 3,
+        hasMore: true,
+      },
     });
 
     const page = makePage([1, 2, 3], 0, 10, 3, fetchPage);
@@ -68,19 +78,40 @@ describe('Page', () => {
         return Promise.resolve({
           success: true,
           data: [1, 2, 3],
-          pagination: { total: 9, limit: 3, offset: 0, hasMore: true },
+          pagination: {
+            page: 1,
+            total: 9,
+            limit: 3,
+            totalPages: 3,
+            offset: 0,
+            hasMore: true,
+          },
         });
       } else if (page === 2) {
         return Promise.resolve({
           success: true,
           data: [4, 5, 6],
-          pagination: { total: 9, limit: 3, offset: 3, hasMore: true },
+          pagination: {
+            page: 2,
+            total: 9,
+            limit: 3,
+            totalPages: 3,
+            offset: 3,
+            hasMore: true,
+          },
         });
       } else {
         return Promise.resolve({
           success: true,
           data: [7, 8, 9],
-          pagination: { total: 9, limit: 3, offset: 6, hasMore: false },
+          pagination: {
+            page: 3,
+            total: 9,
+            limit: 3,
+            totalPages: 3,
+            offset: 6,
+            hasMore: false,
+          },
         });
       }
     });
@@ -196,13 +227,16 @@ describe('PagePromise', () => {
     const fetchPage = vi.fn().mockImplementation(() => {
       const data = pages[callIdx] ?? [];
       const offset = pages.slice(0, callIdx).reduce((s, p) => s + p.length, 0);
+      const page = callIdx + 1;
       callIdx++;
       return Promise.resolve({
         success: true,
         data,
         pagination: {
+          page,
           total,
           limit,
+          totalPages: Math.ceil(total / limit),
           offset,
           hasMore: offset + data.length < total,
         },

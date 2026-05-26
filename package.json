@@ -4,13 +4,13 @@
   "description": "Official TypeScript SDK for the Cynco REST API",
   "author": "Cynco Sdn Bhd",
   "license": "MIT",
-  "homepage": "https://github.com/cynco-tech/cynco-node",
+  "homepage": "https://github.com/cynco-labs/cynco-node",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cynco-tech/cynco-node.git"
+    "url": "https://github.com/cynco-labs/cynco-node.git"
   },
   "bugs": {
-    "url": "https://github.com/cynco-tech/cynco-node/issues"
+    "url": "https://github.com/cynco-labs/cynco-node/issues"
   },
   "keywords": [
     "cynco",
@@ -56,10 +56,11 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "eslint": "^9.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.4.0",
-    "vitest": "^2.0.0"
+    "@types/node": "^25.9.1",
+    "eslint": "^10.4.0",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vitest": "^4.1.7"
   }
 }

@@ -71,8 +71,10 @@ function mockListResponse<T>(
         success: true as const,
         data,
         pagination: {
+          page: Math.floor(offset / limit) + 1,
           total,
           limit,
+          totalPages: Math.ceil(total / limit),
           offset,
           hasMore: offset + data.length < total,
         },
@@ -308,6 +310,8 @@ describe('Cynco class', () => {
     expect(cynco.accounts).toBeDefined();
     expect(cynco.journalEntries).toBeDefined();
     expect(cynco.bankAccounts).toBeDefined();
+    expect(cynco.bankTransactions).toBeDefined();
+    expect(cynco.generalLedger).toBeDefined();
     expect(cynco.reports).toBeDefined();
     expect(cynco.webhooks).toBeDefined();
   });

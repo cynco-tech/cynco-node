@@ -35,8 +35,6 @@ console.log(page.data); // Invoice[]
 const customer = await cynco.customers.create({
   name: 'Acme Corp',
   email: 'billing@acme.com',
-  type: 'company',
-  currency: 'MYR',
 });
 
 // Retrieve a single resource
@@ -70,6 +68,7 @@ cynco.{resource}.retrieve(id)       // Get by ID
 cynco.{resource}.create(data, opts) // Create (where applicable)
 cynco.{resource}.update(id, data)   // Update (where applicable)
 cynco.{resource}.delete(id)         // Delete (where applicable)
+cynco.{resource}.batch(data, opts)  // Batch operations (where applicable)
 ```
 
 ### Invoices
@@ -78,37 +77,41 @@ cynco.{resource}.delete(id)         // Delete (where applicable)
 // List with filters
 const page = await cynco.invoices.list({
   status: 'overdue',
-  customerId: 'cust_abc',
-  dateFrom: '2026-01-01',
+  due_from: '2026-01-01',
   limit: 50,
 });
 
-// Create
-const invoice = await cynco.invoices.create({
-  customerId: 'cust_abc',
-  issueDate: '2026-03-22',
+// Retrieve
+const invoice = await cynco.invoices.retrieve('inv_123');
+
+// Update exposed invoice fields
+const updated = await cynco.invoices.update('inv_123', {
+  memo: 'Reviewed by finance',
   dueDate: '2026-04-22',
-  lineItems: [
-    { description: 'Consulting', quantity: 10, unitPrice: 500 },
-  ],
 });
 
-// Actions
-await cynco.invoices.send('inv_123');
-await cynco.invoices.markPaid('inv_123', { paidDate: '2026-03-25' });
-await cynco.invoices.void('inv_123');
-
-// PDF
-const { url } = await cynco.invoices.getPdf('inv_123');
+// Batch update invoices
+const batch = await cynco.invoices.batch({
+  operations: [
+    { operationId: 'update-1', method: 'update', id: 'inv_123', data: { memo: 'Batch updated' } },
+  ],
+});
 ```
 
 ### Customers
 
 ```typescript
-const page = await cynco.customers.list({ search: 'acme', type: 'company' });
+const page = await cynco.customers.list({ search: 'acme', status: 'active' });
 const customer = await cynco.customers.create({ name: 'Acme Corp' });
 const updated = await cynco.customers.update('cust_123', { name: 'Acme Inc' });
 await cynco.customers.delete('cust_123');
+
+const batch = await cynco.customers.batch({
+  operations: [
+    { operationId: 'create-acme', method: 'create', data: { name: 'Acme Corp' } },
+    { operationId: 'update-beta', method: 'update', id: 'cust_456', data: { isActive: false } },
+  ],
+});
 ```
 
 ### Vendors
@@ -119,110 +122,125 @@ const vendor = await cynco.vendors.create({
   name: 'Office Supplies Co',
   email: 'accounts@supplier.com',
 });
+
+const batch = await cynco.vendors.batch({
+  operations: [
+    { operationId: 'create-supplier', method: 'create', data: { name: 'Office Supplies Co' } },
+  ],
+});
 ```
 
 ### Bills
 
 ```typescript
-const page = await cynco.bills.list({ status: 'received', vendorId: 'vnd_123' });
-const bill = await cynco.bills.create({
-  vendorId: 'vnd_123',
-  issueDate: '2026-03-20',
+const page = await cynco.bills.list({ status: 'approved', vendorId: 'vnd_123' });
+const bill = await cynco.bills.retrieve('bill_123');
+const updated = await cynco.bills.update('bill_123', {
   dueDate: '2026-04-20',
-  lineItems: [{ description: 'Paper supplies', quantity: 100, unitPrice: 5 }],
+  memo: 'Scheduled for payment review',
 });
-
-await cynco.bills.markPaid('bill_123');
-await cynco.bills.void('bill_123');
 ```
 
 ### Items
 
 ```typescript
-const page = await cynco.items.list({ type: 'service' });
-const item = await cynco.items.create({
-  name: 'Consulting Hour',
-  type: 'service',
-  unitPrice: 500,
-});
+const page = await cynco.items.list({ search: 'consulting' });
+const item = await cynco.items.retrieve('item_123');
+const updated = await cynco.items.update('item_123', { unitPrice: 500 });
+await cynco.items.delete('item_123');
 ```
 
 ### Chart of Accounts
 
 ```typescript
-const page = await cynco.accounts.list({ type: 'revenue' });
-const account = await cynco.accounts.create({
-  name: 'Sales Revenue',
-  code: '4000',
-  type: 'revenue',
-});
+const page = await cynco.accounts.list({ account_type: 'revenue' });
+const account = await cynco.accounts.retrieve('acc_123');
 ```
 
 ### Journal Entries
 
 ```typescript
 const page = await cynco.journalEntries.list({ status: 'posted' });
-const entry = await cynco.journalEntries.create({
-  date: '2026-03-22',
+const journalEntryInput = {
+  entryDate: '2026-03-22',
   description: 'Monthly depreciation',
   lines: [
-    { accountId: 'acc_dep_exp', debit: 1000, credit: 0 },
-    { accountId: 'acc_accum_dep', debit: 0, credit: 1000 },
+    { accountId: 'acc_dep_exp', debitAmount: 1000, creditAmount: 0 },
+    { accountId: 'acc_accum_dep', debitAmount: 0, creditAmount: 1000 },
+  ],
+};
+const entry = await cynco.journalEntries.create(journalEntryInput);
+
+await cynco.journalEntries.update('je_123', { memo: 'Updated while draft' });
+await cynco.journalEntries.delete('je_123');
+
+const batch = await cynco.journalEntries.batch({
+  operations: [
+    { operationId: 'create-je', method: 'create', data: journalEntryInput },
   ],
 });
-
-await cynco.journalEntries.post('je_123');
-await cynco.journalEntries.void('je_123');
 ```
 
 ### Bank Accounts
 
 ```typescript
-const page = await cynco.bankAccounts.list();
-const account = await cynco.bankAccounts.create({
-  name: 'Operating Account',
-  accountNumber: '1234567890',
-  bankName: 'Maybank',
-  currency: 'MYR',
+const accounts = await cynco.bankAccounts.list();
+const account = await cynco.bankAccounts.retrieve('ba_123');
+```
+
+### Bank Transactions
+
+```typescript
+const txns = await cynco.bankTransactions.list({
+  accountId: 'ba_123',
+  status: 'posted',
+  startDate: '2026-03-01',
 });
 
-// List transactions for a bank account
-const txns = await cynco.bankAccounts.listTransactions('ba_123', {
-  status: 'cleared',
-  dateFrom: '2026-03-01',
+const txn = await cynco.bankTransactions.retrieve('btx_123');
+```
+
+### General Ledger
+
+```typescript
+const ledger = await cynco.generalLedger.list({
+  period: '2026-03',
+  account_id: 'acc_cash',
+  page_size: 50,
 });
+console.log(ledger.data);
 ```
 
 ### Reports
 
 ```typescript
 const bs = await cynco.reports.balanceSheet({
-  endDate: '2026-03-31',
-  currency: 'MYR',
+  period: '2026-03',
 });
 console.log(bs.totalAssets, bs.totalLiabilities, bs.totalEquity);
 
-const pnl = await cynco.reports.profitAndLoss({
-  startDate: '2026-01-01',
-  endDate: '2026-03-31',
-});
+const pnl = await cynco.reports.profitLoss({ period: '2026-03' });
 console.log(pnl.netIncome);
 
-const tb = await cynco.reports.trialBalance({ endDate: '2026-03-31' });
-console.log(tb.totalDebits, tb.totalCredits);
+const tb = await cynco.reports.trialBalance({
+  period: '2026-03',
+  balanceType: 'preliminary',
+});
+console.log(tb.totalDebit, tb.totalCredit);
 ```
 
 ### Webhooks
 
 ```typescript
-const page = await cynco.webhooks.list();
+const webhooks = await cynco.webhooks.list();
 const webhook = await cynco.webhooks.create({
   url: 'https://example.com/webhooks/cynco',
-  events: ['invoice.paid', 'customer.created'],
+  events: ['invoice.updated', 'customer.created'],
 });
+console.log(webhook.secret); // returned only when the endpoint is created
 
 await cynco.webhooks.update('wh_123', { isActive: false });
-const { secret } = await cynco.webhooks.rotateSecret('wh_123');
+await cynco.webhooks.delete('wh_123');
 ```
 
 ## Pagination
@@ -230,7 +248,7 @@ const { secret } = await cynco.webhooks.rotateSecret('wh_123');
 ### Standard (single page)
 
 ```typescript
-const page = await cynco.invoices.list({ limit: 20, offset: 40 });
+const page = await cynco.invoices.list({ limit: 20, page: 3 });
 
 console.log(page.data);               // Invoice[]
 console.log(page.pagination.total);    // Total count
@@ -376,7 +394,7 @@ Generate test signatures for development:
 
 ```typescript
 const { signature, timestamp } = Cynco.webhooks.sign(
-  JSON.stringify({ event: 'invoice.paid', data: {} }),
+  JSON.stringify({ event: 'invoice.updated', data: {} }),
   'whsec_your_test_secret',
 );
 ```
@@ -389,7 +407,7 @@ Every resource, parameter, and response is fully typed. Import individual types 
 import type {
   Invoice,
   Customer,
-  InvoiceCreateInput,
+  InvoiceUpdateInput,
   CustomerListParams,
   PaginatedResponse,
   WebhookEvent,
@@ -401,7 +419,7 @@ import type {
 The SDK ships as a dual ESM/CJS package:
 
 ```javascript
-const { default: Cynco } = require('cynco');
+const { default: Cynco } = require('@cynco/sdk');
 const cynco = new Cynco('cak_your_api_key');
 ```
 

@@ -5,6 +5,8 @@ import type {
   VendorListParams,
   VendorCreateInput,
   VendorUpdateInput,
+  BatchRequest,
+  BatchResponse,
   PaginatedResponse,
   RequestOptions,
 } from '../types.js';
@@ -74,5 +76,18 @@ export class Vendors {
   /** Delete a vendor. Only vendors with no associated records can be deleted. */
   async delete(id: string, options?: RequestOptions): Promise<void> {
     await this._client.delete(`/vendors/${id}`, options);
+  }
+
+  /** Execute up to 100 vendor create, update, or delete operations. */
+  async batch(
+    data: BatchRequest<VendorCreateInput | VendorUpdateInput>,
+    options?: RequestOptions,
+  ): Promise<BatchResponse<Vendor>> {
+    const response = await this._client.post<BatchResponse<Vendor>>(
+      '/vendors/batch',
+      data,
+      options,
+    );
+    return response.data;
   }
 }

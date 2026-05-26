@@ -38,7 +38,7 @@ export class Accounts {
 
   /** Retrieve a single account by ID. */
   async retrieve(id: string): Promise<Account> {
-    const response = await this._client.get<Account>(`/accounts?id=${encodeURIComponent(id)}`);
-    return response.data;  // accounts uses ?id= since there's no /:id route
+    const response = await this._client.get<Account>('/accounts', { id });
+    return response.data;
   }
 }

@@ -5,7 +5,7 @@ describe('webhookVerifier', () => {
   const secret = 'whsec_test_secret_key_1234567890';
   const payload = JSON.stringify({
     id: 'evt_123',
-    event: 'invoice.paid',
+    event: 'invoice.updated',
     data: { invoiceId: 'inv_456' },
   });
 

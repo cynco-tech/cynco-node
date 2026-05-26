@@ -5,6 +5,8 @@ import type {
   CustomerListParams,
   CustomerCreateInput,
   CustomerUpdateInput,
+  BatchRequest,
+  BatchResponse,
   PaginatedResponse,
   RequestOptions,
 } from '../types.js';
@@ -74,5 +76,18 @@ export class Customers {
   /** Delete a customer. Only customers with no associated records can be deleted. */
   async delete(id: string, options?: RequestOptions): Promise<void> {
     await this._client.delete(`/customers/${id}`, options);
+  }
+
+  /** Execute up to 100 customer create, update, or delete operations. */
+  async batch(
+    data: BatchRequest<CustomerCreateInput | CustomerUpdateInput>,
+    options?: RequestOptions,
+  ): Promise<BatchResponse<Customer>> {
+    const response = await this._client.post<BatchResponse<Customer>>(
+      '/customers/batch',
+      data,
+      options,
+    );
+    return response.data;
   }
 }
