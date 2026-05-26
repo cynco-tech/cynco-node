@@ -56,33 +56,4 @@ export class Bills {
     );
     return response.data;
   }
-
-  /** Delete a bill. Only draft bills can be deleted. */
-  async delete(id: string, options?: RequestOptions): Promise<void> {
-    await this._client.delete(`/bills/${id}`, options);
-  }
-
-  /** Mark a bill as paid. */
-  async markPaid(
-    id: string,
-    data?: { paidDate?: string; paymentMethod?: string },
-    options?: RequestOptions,
-  ): Promise<Bill> {
-    const response = await this._client.post<Bill>(
-      `/bills/${id}/mark-paid`,
-      data,
-      options,
-    );
-    return response.data;
-  }
-
-  /** Void a bill. */
-  async void(id: string, options?: RequestOptions): Promise<Bill> {
-    const response = await this._client.post<Bill>(
-      `/bills/${id}/void`,
-      undefined,
-      options,
-    );
-    return response.data;
-  }
 }

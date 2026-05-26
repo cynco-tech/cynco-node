@@ -11,7 +11,7 @@ import type {
  * ```ts
  * const page = await cynco.invoices.list({ limit: 20 });
  * console.log(page.data);           // Invoice[]
- * console.log(page.pagination);     // { total, limit, offset, hasMore }
+ * console.log(page.pagination);     // { page, limit, total, totalPages, hasMore }
  * ```
  *
  * Auto-pagination (all pages):
@@ -22,7 +22,7 @@ import type {
  * ```
  */
 export class Page<T> implements AsyncIterable<T> {
-  readonly success: true = true;
+  readonly success = true as const;
   readonly data: T[];
   readonly pagination: PaginatedResponse<T>['pagination'];
   readonly links?: PaginatedResponse<T>['links'];
@@ -57,12 +57,12 @@ export class Page<T> implements AsyncIterable<T> {
       return null;
     }
 
-    // The API uses page-based params but returns offset in the pagination response.
-    // Compute the next page number from the current offset + limit.
-    const nextPage = Math.floor(this.pagination.offset / this.pagination.limit) + 2;
+    const currentPage =
+      this.pagination.page ??
+      Math.floor((this.pagination.offset ?? 0) / this.pagination.limit) + 1;
     const nextParams: ListParams = {
       ...this._params,
-      page: nextPage,
+      page: currentPage + 1,
     };
 
     const response = await this._fetchPage(nextParams);
@@ -87,7 +87,7 @@ export class Page<T> implements AsyncIterable<T> {
  * A cursor-based paginated list with async iteration support.
  */
 export class CursorPage<T> implements AsyncIterable<T> {
-  readonly success: true = true;
+  readonly success = true as const;
   readonly data: T[];
   readonly pagination: CursorPaginatedResponse<T>['pagination'];
   readonly links?: CursorPaginatedResponse<T>['links'];

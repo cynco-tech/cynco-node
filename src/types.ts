@@ -49,10 +49,13 @@ export interface CursorPaginatedResponse<T> {
 }
 
 export interface OffsetPagination {
+  page: number;
   total: number;
   limit: number;
-  offset: number;
+  totalPages: number;
   hasMore: boolean;
+  /** Present only on older test doubles; the live API uses `page`. */
+  offset?: number;
 }
 
 export interface CursorPagination {
@@ -94,6 +97,41 @@ export interface ErrorResponse {
 export interface ValidationDetail {
   field: string;
   message: string;
+}
+
+export type BatchOperationMethod = 'create' | 'update' | 'delete';
+
+export interface BatchOperation<TData = Record<string, unknown>> {
+  /** Client-provided identifier returned with the operation result. */
+  operationId?: string;
+  method: BatchOperationMethod;
+  /** Required for update and delete operations. */
+  id?: string;
+  /** Required for create and update operations. */
+  data?: TData;
+}
+
+export interface BatchRequest<TData = Record<string, unknown>> {
+  operations: BatchOperation<TData>[];
+  /** Atomic mode is reserved by the API and must currently be false. */
+  atomic?: false;
+}
+
+export interface BatchResultItem<TData = Record<string, unknown>> {
+  operationId: string;
+  status: number;
+  data?: TData;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface BatchResponse<TData = Record<string, unknown>> {
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: BatchResultItem<TData>[];
 }
 
 // ---------------------------------------------------------------------------
@@ -174,31 +212,38 @@ export interface ItemListParams extends ListParams {
 export interface AccountListParams extends ListParams {
   account_type?: AccountType;
   active_only?: 'true' | 'false';
+  id?: string;
 }
 
 export interface JournalEntryListParams extends ListParams {
-  dateFrom?: string;
-  dateTo?: string;
-  status?: 'draft' | 'posted' | 'voided';
+  period?: string;
+  status?: JournalEntryStatus;
+  source?: JournalEntrySource;
   search?: string;
 }
 
-export interface BankAccountListParams extends ListParams {
-  search?: string;
-  isActive?: boolean;
+export interface BankAccountListParams {
+  id?: string;
 }
 
 export interface BankTransactionListParams extends ListParams {
-  bankAccountId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  status?: 'pending' | 'cleared' | 'reconciled';
+  id?: string;
+  accountId?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: BankTransactionStatus;
   type?: 'credit' | 'debit';
+  matchStatus?: BankTransactionMatchStatus;
   search?: string;
 }
 
-export interface WebhookListParams extends ListParams {
-  isActive?: boolean;
+export interface GeneralLedgerEntryListParams {
+  page?: number;
+  page_size?: number;
+  account_id?: string;
+  period?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -331,25 +376,11 @@ export interface BillUpdateInput {
   vendorId?: string;
   billNumber?: string;
   referenceNumber?: string;
-  status?: BillStatus;
-  currency?: string;
   dueDate?: string;
   issueDate?: string;
   category?: string;
   memo?: string;
   notes?: string;
-}
-
-/**
- * Item create input.
- * Matches the Zod `createItemSchema` in item.schemas.ts.
- */
-export interface ItemCreateInput {
-  name: string;
-  description?: string;
-  unitPrice: number;
-  taxRate?: number;
-  discountRate?: number;
 }
 
 /**
@@ -364,57 +395,52 @@ export interface ItemUpdateInput {
   discountRate?: number;
 }
 
+export interface JournalEntryLineInput {
+  accountId: string;
+  debitAmount: number;
+  creditAmount: number;
+  description?: string | null;
+  costCenter?: string | null;
+  project?: string | null;
+  department?: string | null;
+}
+
 export interface JournalEntryCreateInput {
-  date: string;
-  reference?: string;
-  description?: string;
+  entryDate: string;
+  description: string;
   lines: JournalEntryLineInput[];
+  memo?: string | null;
+  currency?: string;
+  documentType?: string | null;
+  documentNumber?: string | null;
+  documentDate?: string | null;
+  vendorId?: string | null;
+  vendorName?: string | null;
+  customerId?: string | null;
+  customerName?: string | null;
+  source?: 'manual' | 'adjustment' | 'opening_balance' | 'import';
 }
 
 export interface JournalEntryUpdateInput {
-  date?: string;
-  reference?: string;
+  entryDate?: string;
   description?: string;
   lines?: JournalEntryLineInput[];
-}
-
-export interface JournalEntryLineInput {
-  accountId: string;
-  debit: number;
-  credit: number;
-  description?: string;
-}
-
-export interface BankAccountCreateInput {
-  name: string;
-  accountNumber: string;
-  bankName: string;
+  memo?: string | null;
   currency?: string;
-  accountId?: string;
-  routingNumber?: string;
-  swiftCode?: string;
-}
-
-export interface BankAccountUpdateInput {
-  name?: string;
-  bankName?: string;
-  currency?: string;
-  accountId?: string;
-  routingNumber?: string;
-  swiftCode?: string;
+  documentType?: string | null;
+  documentNumber?: string | null;
+  documentDate?: string | null;
 }
 
 export interface WebhookCreateInput {
   url: string;
   events: WebhookEvent[];
-  secret?: string;
   description?: string;
 }
 
 export interface WebhookUpdateInput {
   url?: string;
   events?: WebhookEvent[];
-  secret?: string;
   description?: string;
   isActive?: boolean;
 }
@@ -553,6 +579,40 @@ export type BillStatus =
   | 'rejected'
   | 'void';
 
+export type JournalEntryStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved'
+  | 'posted'
+  | 'reversed'
+  | 'cancelled';
+
+export type JournalEntrySource =
+  | 'extraction'
+  | 'manual'
+  | 'import'
+  | 'adjustment'
+  | 'opening_balance'
+  | 'closing_entry'
+  | 'bill'
+  | 'invoice'
+  | 'credit_note'
+  | 'depreciation';
+
+export type BankTransactionStatus =
+  | 'imported'
+  | 'categorized'
+  | 'posted'
+  | 'reconciled'
+  | 'excluded';
+
+export type BankTransactionMatchStatus =
+  | 'unmatched'
+  | 'suggested'
+  | 'matched'
+  | 'reconciled'
+  | 'excluded';
+
 /**
  * Item as returned by the API.
  * Matches `serializeItem()` in item.serializer.ts.
@@ -612,37 +672,56 @@ export interface Account {
 
 export interface JournalEntry {
   id: string;
-  entryNumber: string;
-  date: string;
-  reference: string | null;
+  entryNumber: string | null;
+  entryDate: string;
+  period: string | null;
+  status: JournalEntryStatus;
+  source: JournalEntrySource | null;
   description: string | null;
-  status: 'draft' | 'posted' | 'voided';
-  lines: JournalEntryLine[];
+  memo?: string | null;
+  documentType: string | null;
+  documentNumber: string | null;
+  vendorName: string | null;
+  customerName: string | null;
   totalDebit: number;
   totalCredit: number;
+  isBalanced: boolean;
+  currency: string;
+  isReversal: boolean;
+  requiresApproval: boolean;
+  /** Present on detail endpoints and absent on list endpoints. */
+  lines?: JournalEntryLine[];
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface JournalEntryLine {
-  id: string;
   accountId: string;
-  account?: Account;
-  debit: number;
-  credit: number;
-  description: string | null;
+  debitAmount: number;
+  creditAmount: number;
+  description?: string | null;
+  costCenter?: string | null;
+  project?: string | null;
+  department?: string | null;
 }
 
 export interface BankAccount {
   id: string;
-  name: string;
-  accountNumber: string;
-  bankName: string;
+  accountName: string;
+  accountType: string;
   currency: string;
-  accountId: string | null;
-  routingNumber: string | null;
-  swiftCode: string | null;
-  balance: number;
+  currentBalance: number;
+  creditLimit: number | null;
+  openingBalance: number;
+  openingBalanceDate: string | null;
+  lastStatementDate: string | null;
+  lastReconciledDate: string | null;
+  displayOrder: number;
+  notes: string | null;
+  institution: {
+    id: string;
+    name: string;
+    swiftCode: string | null;
+  } | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -650,37 +729,65 @@ export interface BankAccount {
 
 export interface BankTransaction {
   id: string;
-  bankAccountId: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'credit' | 'debit';
-  status: 'pending' | 'cleared' | 'reconciled';
+  financialAccountId: string;
+  transactionDate: string | null;
+  valueDate: string | null;
+  rawDescription: string | null;
+  cleanDescription: string | null;
   reference: string | null;
+  transactionType: 'credit' | 'debit';
+  amount: number;
+  balanceAfter: number | null;
   category: string | null;
-  matchedTransactionId: string | null;
+  payeeName: string | null;
+  status: BankTransactionStatus | null;
+  matchStatus: BankTransactionMatchStatus | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface GeneralLedgerEntry {
+  id: string;
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: string;
+  journalEntryId: string | null;
+  entryNumber: string | null;
+  transactionDate: string | null;
+  postingDate: string | null;
+  period: string | null;
+  debitAmount: number;
+  creditAmount: number;
+  runningBalance: number;
+  description: string | null;
+  reference: string | null;
+  entryDescription: string | null;
+  documentType: string | null;
+  documentNumber: string | null;
+  vendorName: string | null;
+  customerName: string | null;
+  isReconciled: boolean;
+  createdAt: string | null;
 }
 
 export interface Webhook {
   id: string;
   url: string;
   events: WebhookEvent[];
-  secret: string;
   description: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+export type WebhookCreateResponse = Webhook & { secret: string };
+
 export type WebhookEvent =
+  | '*'
   | 'invoice.created'
   | 'invoice.updated'
-  | 'invoice.sent'
-  | 'invoice.paid'
-  | 'invoice.voided'
-  | 'invoice.overdue'
+  | 'invoice.deleted'
   | 'customer.created'
   | 'customer.updated'
   | 'customer.deleted'
@@ -689,12 +796,12 @@ export type WebhookEvent =
   | 'vendor.deleted'
   | 'bill.created'
   | 'bill.updated'
-  | 'bill.paid'
-  | 'bill.voided'
-  | 'payment.received'
-  | 'payment.sent'
-  | 'bank_transaction.created'
-  | 'bank_transaction.reconciled';
+  | 'bill.deleted'
+  | 'journal_entry.created'
+  | 'journal_entry.updated'
+  | 'item.created'
+  | 'item.updated'
+  | 'item.deleted';
 
 export interface WebhookPayload {
   id: string;
@@ -707,68 +814,78 @@ export interface WebhookPayload {
 // Report types
 // ---------------------------------------------------------------------------
 
-export interface ReportParams {
-  startDate: string;
-  endDate: string;
-  currency?: string;
-  comparePrevious?: boolean;
+export interface PeriodReportParams {
+  /** Accounting period in YYYY-MM format. */
+  period: string;
 }
 
-export interface BalanceSheetReport {
-  reportType: 'balance_sheet';
-  asOf: string;
-  currency: string;
-  assets: ReportSection;
-  liabilities: ReportSection;
-  equity: ReportSection;
-  totalAssets: number;
-  totalLiabilities: number;
-  totalEquity: number;
+export interface TrialBalanceParams extends PeriodReportParams {
+  balanceType?: 'preliminary' | 'adjusted' | 'final';
 }
 
-export interface ProfitAndLossReport {
-  reportType: 'profit_and_loss';
-  startDate: string;
-  endDate: string;
-  currency: string;
-  revenue: ReportSection;
-  costOfGoodsSold: ReportSection;
-  grossProfit: number;
-  operatingExpenses: ReportSection;
-  operatingIncome: number;
-  otherIncome: ReportSection;
-  otherExpenses: ReportSection;
-  netIncome: number;
-}
-
-export interface TrialBalanceReport {
-  reportType: 'trial_balance';
-  asOf: string;
-  currency: string;
-  accounts: TrialBalanceRow[];
-  totalDebits: number;
-  totalCredits: number;
-}
-
-export interface TrialBalanceRow {
-  accountId: string;
-  accountCode: string;
-  accountName: string;
-  accountType: AccountType;
-  debit: number;
-  credit: number;
-}
-
-export interface ReportSection {
+export interface StatementGroup {
   label: string;
-  rows: ReportRow[];
   total: number;
+  accounts: Array<{
+    accountId: string;
+    accountCode: string;
+    accountName: string;
+    balance: number;
+  }>;
 }
 
-export interface ReportRow {
-  accountId: string;
-  accountCode: string;
-  accountName: string;
-  amount: number;
-  previousAmount?: number;
+export interface TrialBalance {
+  period: string;
+  asOfDate: string;
+  balanceType: 'preliminary' | 'adjusted' | 'final' | string;
+  totalDebit: number;
+  totalCredit: number;
+  isBalanced: boolean;
+  difference: number;
+  accountCount: number;
+  lineItems: Array<{
+    accountId: string;
+    accountCode: string;
+    accountName: string;
+    accountType: string;
+    normalBalance: string;
+    openingBalance: number;
+    periodDebit: number;
+    periodCredit: number;
+    closingBalance: number;
+    debitBalance: number;
+    creditBalance: number;
+    transactionCount: number;
+  }>;
+}
+
+export interface BalanceSheet {
+  period: string;
+  currentAssets: StatementGroup;
+  nonCurrentAssets: StatementGroup;
+  totalAssets: number;
+  currentLiabilities: StatementGroup;
+  nonCurrentLiabilities: StatementGroup;
+  totalLiabilities: number;
+  equity: StatementGroup;
+  retainedEarnings: number;
+  totalEquity: number;
+  totalLiabilitiesAndEquity: number;
+  isBalanced: boolean;
+  difference: number;
+  totalAccounts: number;
+}
+
+export interface ProfitLoss {
+  period: string;
+  revenue: StatementGroup;
+  costOfSales: StatementGroup;
+  grossProfit: number;
+  operatingExpenses: StatementGroup;
+  otherIncome: StatementGroup;
+  otherExpenses: StatementGroup;
+  taxExpenses: StatementGroup;
+  operatingProfit: number;
+  netIncome: number;
+  totalAccounts: number;
 }

@@ -3,7 +3,6 @@ import { Page, PagePromise } from '../pagination.js';
 import type {
   Item,
   ItemListParams,
-  ItemCreateInput,
   ItemUpdateInput,
   PaginatedResponse,
   RequestOptions,
@@ -16,7 +15,7 @@ export class Items {
    * List items (products and services) with pagination.
    *
    * ```ts
-   * for await (const item of cynco.items.list({ type: 'service' })) {
+   * for await (const item of cynco.items.list({ search: 'service' })) {
    *   console.log(item.name);
    * }
    * ```
@@ -41,15 +40,6 @@ export class Items {
   /** Retrieve a single item by ID. */
   async retrieve(id: string): Promise<Item> {
     const response = await this._client.get<Item>(`/items/${id}`);
-    return response.data;
-  }
-
-  /** Create a new item. */
-  async create(
-    data: ItemCreateInput,
-    options?: RequestOptions,
-  ): Promise<Item> {
-    const response = await this._client.post<Item>('/items', data, options);
     return response.data;
   }
 

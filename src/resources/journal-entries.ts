@@ -5,6 +5,8 @@ import type {
   JournalEntryListParams,
   JournalEntryCreateInput,
   JournalEntryUpdateInput,
+  BatchRequest,
+  BatchResponse,
   PaginatedResponse,
   RequestOptions,
 } from '../types.js';
@@ -78,21 +80,14 @@ export class JournalEntries {
     await this._client.delete(`/journal-entries/${id}`, options);
   }
 
-  /** Post a draft journal entry to the ledger. */
-  async post(id: string, options?: RequestOptions): Promise<JournalEntry> {
-    const response = await this._client.post<JournalEntry>(
-      `/journal-entries/${id}/post`,
-      undefined,
-      options,
-    );
-    return response.data;
-  }
-
-  /** Void a posted journal entry. */
-  async void(id: string, options?: RequestOptions): Promise<JournalEntry> {
-    const response = await this._client.post<JournalEntry>(
-      `/journal-entries/${id}/void`,
-      undefined,
+  /** Execute up to 100 journal entry create operations. */
+  async batch(
+    data: BatchRequest<JournalEntryCreateInput>,
+    options?: RequestOptions,
+  ): Promise<BatchResponse<JournalEntry>> {
+    const response = await this._client.post<BatchResponse<JournalEntry>>(
+      '/journal-entries/batch',
+      data,
       options,
     );
     return response.data;

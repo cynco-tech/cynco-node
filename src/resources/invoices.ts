@@ -1,6 +1,8 @@
 import type { CyncoClient } from '../client.js';
 import { Page, PagePromise } from '../pagination.js';
 import type {
+  BatchRequest,
+  BatchResponse,
   Invoice,
   InvoiceListParams,
   InvoiceUpdateInput,
@@ -61,49 +63,15 @@ export class Invoices {
     return response.data;
   }
 
-  /** Delete an invoice. Only draft invoices can be deleted. */
-  async delete(id: string, options?: RequestOptions): Promise<void> {
-    await this._client.delete(`/invoices/${id}`, options);
-  }
-
-  /** Send an invoice to the customer via email. */
-  async send(id: string, options?: RequestOptions): Promise<Invoice> {
-    const response = await this._client.post<Invoice>(
-      `/invoices/${id}/send`,
-      undefined,
-      options,
-    );
-    return response.data;
-  }
-
-  /** Mark an invoice as paid. */
-  async markPaid(
-    id: string,
-    data?: { paidDate?: string; paymentMethod?: string },
+  /** Run batch invoice operations. The v1 API currently supports invoice delete operations. */
+  async batch(
+    data: BatchRequest<InvoiceUpdateInput>,
     options?: RequestOptions,
-  ): Promise<Invoice> {
-    const response = await this._client.post<Invoice>(
-      `/invoices/${id}/mark-paid`,
+  ): Promise<BatchResponse<Invoice>> {
+    const response = await this._client.post<BatchResponse<Invoice>>(
+      '/invoices/batch',
       data,
       options,
-    );
-    return response.data;
-  }
-
-  /** Void an invoice. */
-  async void(id: string, options?: RequestOptions): Promise<Invoice> {
-    const response = await this._client.post<Invoice>(
-      `/invoices/${id}/void`,
-      undefined,
-      options,
-    );
-    return response.data;
-  }
-
-  /** Get the PDF download URL for an invoice. */
-  async getPdf(id: string): Promise<{ url: string }> {
-    const response = await this._client.get<{ url: string }>(
-      `/invoices/${id}/pdf`,
     );
     return response.data;
   }

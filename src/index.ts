@@ -8,6 +8,8 @@ import { Items } from './resources/items.js';
 import { Accounts } from './resources/accounts.js';
 import { JournalEntries } from './resources/journal-entries.js';
 import { BankAccounts } from './resources/bank-accounts.js';
+import { BankTransactions } from './resources/bank-transactions.js';
+import { GeneralLedger } from './resources/general-ledger.js';
 import { Reports } from './resources/reports.js';
 import { Webhooks } from './resources/webhooks.js';
 import type { CyncoClientOptions } from './types.js';
@@ -40,6 +42,10 @@ class Cynco {
   readonly journalEntries: JournalEntries;
   /** Bank accounts resource. */
   readonly bankAccounts: BankAccounts;
+  /** Bank transactions resource. */
+  readonly bankTransactions: BankTransactions;
+  /** Posted general ledger entries resource. */
+  readonly generalLedger: GeneralLedger;
   /** Financial reports resource. */
   readonly reports: Reports;
   /** Webhook endpoints resource. */
@@ -73,6 +79,8 @@ class Cynco {
     this.accounts = new Accounts(this._client);
     this.journalEntries = new JournalEntries(this._client);
     this.bankAccounts = new BankAccounts(this._client);
+    this.bankTransactions = new BankTransactions(this._client);
+    this.generalLedger = new GeneralLedger(this._client);
     this.reports = new Reports(this._client);
     this.webhooks = new Webhooks(this._client);
   }
@@ -117,6 +125,8 @@ export { Items } from './resources/items.js';
 export { Accounts } from './resources/accounts.js';
 export { JournalEntries } from './resources/journal-entries.js';
 export { BankAccounts } from './resources/bank-accounts.js';
+export { BankTransactions } from './resources/bank-transactions.js';
+export { GeneralLedger } from './resources/general-ledger.js';
 export { Reports } from './resources/reports.js';
 export { Webhooks } from './resources/webhooks.js';
 
@@ -136,6 +146,11 @@ export type {
   RateLimitInfo,
   ErrorResponse,
   ValidationDetail,
+  BatchOperationMethod,
+  BatchOperation,
+  BatchRequest,
+  BatchResultItem,
+  BatchResponse,
   // List params
   ListParams,
   InvoiceListParams,
@@ -147,7 +162,7 @@ export type {
   JournalEntryListParams,
   BankAccountListParams,
   BankTransactionListParams,
-  WebhookListParams,
+  GeneralLedgerEntryListParams,
   // Create / update inputs
   InvoiceUpdateInput,
   CustomerCreateInput,
@@ -155,13 +170,10 @@ export type {
   VendorCreateInput,
   VendorUpdateInput,
   BillUpdateInput,
-  ItemCreateInput,
   ItemUpdateInput,
   JournalEntryCreateInput,
   JournalEntryUpdateInput,
   JournalEntryLineInput,
-  BankAccountCreateInput,
-  BankAccountUpdateInput,
   WebhookCreateInput,
   WebhookUpdateInput,
   // Resource types
@@ -171,22 +183,27 @@ export type {
   Vendor,
   Bill,
   BillStatus,
+  JournalEntryStatus,
+  JournalEntrySource,
   Item,
   Account,
   AccountType,
   JournalEntry,
   JournalEntryLine,
   BankAccount,
+  BankTransactionStatus,
+  BankTransactionMatchStatus,
   BankTransaction,
+  GeneralLedgerEntry,
   Webhook,
+  WebhookCreateResponse,
   WebhookEvent,
   WebhookPayload,
   // Reports
-  ReportParams,
-  BalanceSheetReport,
-  ProfitAndLossReport,
-  TrialBalanceReport,
-  TrialBalanceRow,
-  ReportSection,
-  ReportRow,
+  PeriodReportParams,
+  TrialBalanceParams,
+  StatementGroup,
+  TrialBalance,
+  BalanceSheet,
+  ProfitLoss,
 } from './types.js';

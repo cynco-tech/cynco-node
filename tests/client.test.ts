@@ -1,10 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { CyncoClient } from '../src/client.js';
 import {
   AuthenticationError,
   NotFoundError,
   ValidationError,
-  RateLimitError,
   InternalError,
   CyncoError,
   ConnectionError,

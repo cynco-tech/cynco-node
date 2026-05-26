@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type {
   CyncoClientOptions,
   CyncoResponse,
+  CursorPaginatedResponse,
   PaginatedResponse,
   RequestOptions,
   ErrorResponse,
@@ -24,7 +25,7 @@ const DEFAULT_BASE_URL = 'https://app.cynco.io/api/v1';
 const DEFAULT_TIMEOUT = 30_000;
 const DEFAULT_MAX_RETRIES = 3;
 
-const SDK_VERSION = '0.1.0';
+const SDK_VERSION = '0.2.0';
 const USER_AGENT = `cynco-node/${SDK_VERSION}`;
 
 /** HTTP methods that are safe to retry on transient failure. */
@@ -84,6 +85,20 @@ export class CyncoClient {
   ): Promise<PaginatedResponse<T>> {
     const url = this._buildUrl(path, params);
     return this._request<PaginatedResponse<T>>('GET', url, undefined, options);
+  }
+
+  async getCursorList<T>(
+    path: string,
+    params?: Record<string, unknown>,
+    options?: RequestOptions,
+  ): Promise<CursorPaginatedResponse<T>> {
+    const url = this._buildUrl(path, params);
+    return this._request<CursorPaginatedResponse<T>>(
+      'GET',
+      url,
+      undefined,
+      options,
+    );
   }
 
   async post<T>(
